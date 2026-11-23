@@ -1,0 +1,22 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx/client-side-web-part-manifest.schema.json",
+  "id": "22cc7acc-8634-40d6-9a9b-cdf0c08e1308",
+  "alias": "BrillientaCopilotWebPart",
+  "componentType": "WebPart",
+  "version": "*",
+  "manifestVersion": 2,
+  "requiresCustomScript": false,
+  "supportedHosts": ["SharePointWebPart", "SharePointFullPage"],
+  "supportsThemeVariants": true,
+  "supportsFullBleed": true,
+  "preconfiguredEntries": [
+    {
+      "groupId": "5c03119e-3074-46fd-976b-c60198311f70",
+      "group": { "default": "Advanced" },
+      "title": { "default": "Brillienta Copilot" },
+      "description": { "default": "Set up one Microsoft 365 Copilot agent for your Brillienta apps." },
+      "officeFabricIconFontName": "Robot",
+      "properties": {}
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/package-solution.schema.json",
+  "solution": {
+    "name": "Brillienta-Copilot",
+    "id": "46b1028a-d771-4730-9586-b1ef1da24b62",
+    "version": "1.0.0.0",
+    "includeClientSideAssets": true,
+    "skipFeatureDeployment": true,
+    "isDomainIsolated": false,
+    "developer": {
+      "name": "Brillienta",
+      "websiteUrl": "https://www.brillienta.com",
+      "privacyUrl": "https://www.brillienta.com/privacy",
+      "termsOfUseUrl": "https://www.brillienta.com/terms",
+      "mpnId": "7194411"
+    },
+    "metadata": {
+      "shortDescription": { "default": "One Microsoft 365 Copilot agent for every Brillienta app: Helpdesk, Asset Management and Employee Directory." },
+      "longDescription": { "default": "Brillienta Copilot builds one Microsoft 365 Copilot agent for the Brillienta apps your organisation uses. Employees ask in Copilot or Teams about their helpdesk requests, the equipment assigned to them and the people they work with. The agent reads and writes your own SharePoint lists through Microsoft Graph as each signed-in person, so SharePoint permissions still decide what everyone sees. Nothing is stored outside your tenant." },
+      "screenshotPaths": [],
+      "videoUrl": "",
+      "categories": []
+    },
+    "features": [
+      { "title": "Brillienta-Copilot", "description": "Activates the Brillienta Copilot setup web part.", "id": "ba86d577-87f5-4025-a220-d0bba1a4d9c7", "version": "1.0.0.0" }
+    ]
+  },
+  "paths": { "zippedPackage": "solution/Brillienta-Copilot.sppkg" }
+}
