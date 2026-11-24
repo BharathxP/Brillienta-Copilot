@@ -3,7 +3,7 @@
 
 import { SPHttpClient } from '@microsoft/sp-http';
 import { IAppTarget } from '../core/types';
-import { findApps, helpdeskOptions, ISiteInfo, ISiteList } from '../core/discovery';
+import { assetOptions, findApps, helpdeskOptions, ISiteInfo, ISiteList } from '../core/discovery';
 
 export class ProbeError extends Error {
   public readonly status: number;
@@ -39,13 +39,14 @@ export class SiteProbe {
     const info = await this.site(url);
     const apps = findApps(info);
     for (const a of apps) {
-      if (a.key === 'helpdesk') {
-        const settingsTitle = `${a.prefix}Settings`.replace(/'/g, "''");
-        const rows = await this._get<{ value: Array<{ SettingValue: string | null }> }>(
-          `${url}/_api/web/lists/getbytitle('${settingsTitle}')/items?$select=SettingValue&$filter=Title eq 'Config'&$top=1`
-        ).catch(() => ({ value: [] as Array<{ SettingValue: string | null }> }));
-        a.options = helpdeskOptions(rows.value[0] ? rows.value[0].SettingValue || undefined : undefined);
-      }
+      if (a.key !== 'helpdesk' && a.key !== 'assets') continue;
+      // Both apps keep their configuration as JSON in <prefix>Settings, item "Config", column SettingValue.
+      const settingsTitle = `${a.prefix}Settings`.replace(/'/g, "''");
+      const rows = await this._get<{ value: Array<{ SettingValue: string | null }> }>(
+        `${url}/_api/web/lists/getbytitle('${settingsTitle}')/items?$select=SettingValue&$filter=Title eq 'Config'&$top=1`
+      ).catch(() => ({ value: [] as Array<{ SettingValue: string | null }> }));
+      const config = rows.value[0] ? rows.value[0].SettingValue || undefined : undefined;
+      a.options = a.key === 'helpdesk' ? helpdeskOptions(config) : assetOptions(config);
     }
     return apps;
   }

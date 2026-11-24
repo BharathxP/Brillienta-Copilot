@@ -23,6 +23,8 @@ export interface IListRef {
   key: string;
   /** List title = prefix + suffix. */
   suffix: string;
+  /** Not needed to find the app (older versions lack it); used when present. */
+  optional?: boolean;
 }
 
 export interface IFunctionSpec {
@@ -45,11 +47,16 @@ export interface IAppModule {
   instructions(t: IAppTarget): string;
   /** OpenAPI paths (Graph, relative to https://graph.microsoft.com/v1.0). */
   paths(t: IAppTarget): Json;
+  /** Every function the module can offer. */
   functions: IFunctionSpec[];
+  /** The functions this site supports (default: all), e.g. read-only until the app processes Copilot requests. */
+  functionsFor?(t: IAppTarget): IFunctionSpec[];
   pluginDescription(orgName: string): { human: string; model: string };
   starters: Array<{ title: string; text: string }>;
-  /** Plain-language reasons the app cannot be included as found (e.g. a required setting is off). */
+  /** Plain-language reasons the app cannot be included as found (e.g. a required setting is off). Blocks download. */
   check?(t: IAppTarget): string[];
+  /** Plain-language notes shown on the setup page that do not block (e.g. "read-only until ..."). */
+  notes?(t: IAppTarget): string[];
 }
 
 export interface IAgentInput {

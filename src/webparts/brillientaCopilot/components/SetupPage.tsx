@@ -171,12 +171,14 @@ export const SetupPage: React.FC<ISetupPageProps> = (props) => {
             {r.apps.map((a) => {
               const m = MODULES[a.key];
               const issues = m.check ? m.check(a) : [];
+              const notes = m.notes ? m.notes(a) : [];
               return (
                 <Stack key={a.key} horizontal verticalAlign="center" tokens={{ childrenGap: 8 }} style={{ marginTop: 6 }}>
                   <Icon iconName={issues.length ? 'Warning' : 'CompletedSolid'} style={{ color: issues.length ? '#9a6a00' : '#008d62' }} />
                   <Text>
-                    <b>{m.label}</b> (lists {a.prefix}…){a.key === 'helpdesk' ? ' · read and write' : ' · read-only for now'}
+                    <b>{m.label}</b> (lists {a.prefix}…){a.key === 'directory' || notes.length ? ' · read-only' : ' · read and write'}
                     {issues.map((x) => <span key={x} style={{ display: 'block', color: '#9a6a00' }}>{x}</span>)}
+                    {notes.map((x) => <span key={x} style={{ display: 'block', color: '#5f6368' }}>{x}</span>)}
                   </Text>
                 </Stack>
               );

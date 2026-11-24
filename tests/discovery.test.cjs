@@ -61,3 +61,14 @@ test('publisher sign-in is off until both values are filled in; consent URL and 
   assert.match(decodeURIComponent(url), /Sites\.ReadWrite\.All .*User\.Read offline_access/);
   for (let i = 0; i < 50; i++) assert.match(newGuid(), /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
 });
+
+test('Asset Management is found without its newer lists, and its options are read safely', () => {
+  const older = D.findApps(site(['AM_Assets', 'AM_Requests', 'AM_AssetTypes']));
+  assert.deepEqual(older.map((a) => a.key), ['assets']);
+  assert.equal(older[0].listIds.copilotActions, undefined);
+  const newer = D.findApps(site(['AM_Assets', 'AM_Requests', 'AM_AssetTypes', 'AM_CopilotActions', 'AM_Acknowledgements']));
+  assert.equal(newer[0].listIds.copilotActions, 'id-3-AM_CopilotActions');
+  assert.deepEqual(D.assetOptions(JSON.stringify({ features: { copilot: true } })), { copilotEnabled: 'true', acknowledgementsEnabled: 'true' });
+  assert.deepEqual(D.assetOptions(JSON.stringify({ features: { acknowledgements: false } })), { copilotEnabled: 'false', acknowledgementsEnabled: 'false' });
+  assert.deepEqual(D.assetOptions('{bad'), { copilotEnabled: 'false', acknowledgementsEnabled: 'true' });
+});

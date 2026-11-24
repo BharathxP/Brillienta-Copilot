@@ -17,6 +17,12 @@ const STARTERS_LIMIT = 6;
 
 const GUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+/** The functions an app offers on this site. */
+export function functionsOf(a: IAppTarget): Array<{ name: string; description: string; capabilities?: Json }> {
+  const m = MODULES[a.key];
+  return m.functionsFor ? m.functionsFor(a) : m.functions;
+}
+
 function ordered(apps: IAppTarget[]): IAppTarget[] {
   return APP_ORDER.map((k) => apps.filter((a) => a.key === k)[0]).filter((a): a is IAppTarget => !!a);
 }
@@ -92,7 +98,7 @@ export function buildAgent(i: IAgentInput): AgentFiles {
     const m = MODULES[a.key];
     const d = m.pluginDescription(i.orgName);
     files[`openapi-${a.key}.json`] = JSON.stringify(openApiDocument(`${i.orgName} ${m.label}`, d.human, i.appVersion, i.tenantId, m.paths(a)), null, 2);
-    files[`ai-plugin-${a.key}.json`] = JSON.stringify(plugin(i, m.namespace, d.human, d.model, m.functions, `openapi-${a.key}.json`), null, 2);
+    files[`ai-plugin-${a.key}.json`] = JSON.stringify(plugin(i, m.namespace, d.human, d.model, functionsOf(a), `openapi-${a.key}.json`), null, 2);
     actions.push({ id: `${a.key}Actions`, file: `ai-plugin-${a.key}.json` });
   });
 
@@ -166,12 +172,12 @@ export function validateAgentInput(i: IAgentInput): string[] {
     if (seen[a.key]) p.push(`${m.label} is added twice; keep one site.`);
     seen[a.key] = true;
     if (!/^[^,]+,[0-9a-f-]{36},[0-9a-f-]{36}$/i.test(a.graphSiteId)) p.push(`${m.label}: the site id "${a.graphSiteId}" is not a Graph site id.`);
-    m.lists.forEach((l) => {
+    m.lists.filter((l) => !l.optional).forEach((l) => {
       if (!a.listIds[l.key]) p.push(`${m.label}: list ${a.prefix}${l.suffix} was not found on ${a.siteUrl}.`);
     });
     (m.check ? m.check(a) : []).forEach((x) => p.push(`${m.label}: ${x}`));
   });
-  const names = ['getCurrentUser'].concat(...i.apps.map((a) => MODULES[a.key].functions.map((f) => f.name)));
+  const names = ['getCurrentUser'].concat(...i.apps.map((a) => functionsOf(a).map((f) => f.name)));
   names.forEach((n, idx) => {
     if (names.indexOf(n) !== idx) p.push(`Two actions are both called ${n}.`);
   });

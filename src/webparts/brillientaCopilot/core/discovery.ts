@@ -44,7 +44,7 @@ export function findApps(site: ISiteInfo): IAppTarget[] {
       const complete = m.lists.every((l) => {
         const id = byTitle[(prefix + l.suffix).toLowerCase()];
         if (id) ids[l.key] = id;
-        return !!id;
+        return !!id || !!l.optional;
       });
       if (complete) {
         found.push({ key, siteUrl: site.url, graphSiteId: graphSiteId(site.host, site.siteId, site.webId), prefix, listIds: ids, options: {} });
@@ -81,4 +81,20 @@ export function normaliseSiteUrl(input: string): string | undefined {
   if (u.protocol !== 'https:' || !/\.sharepoint(-df)?\.com$/i.test(u.hostname)) return undefined;
   const pathname = u.pathname.replace(/\/(SitePages|Shared%20Documents|Lists|_layouts)\/.*$/i, '').replace(/\/+$/, '');
   return `${u.origin}${pathname}`;
+}
+
+/** Reads what the agent needs from Asset Management's Config setting (JSON in <prefix>Settings, item "Config"). */
+export function assetOptions(configJson: string | undefined): Record<string, string> {
+  let cfg: { features?: { copilot?: boolean; acknowledgements?: boolean } } = {};
+  try {
+    cfg = configJson ? JSON.parse(configJson) : {};
+  } catch {
+    cfg = {};
+  }
+  const f = cfg.features || {};
+  return {
+    copilotEnabled: f.copilot === true ? 'true' : 'false',
+    // Receipt confirmations are on by default in Asset Management.
+    acknowledgementsEnabled: f.acknowledgements === false ? 'false' : 'true'
+  };
 }

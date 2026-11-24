@@ -10,7 +10,7 @@ const addFormats = require('ajv-formats');
 const core = '../lib-commonjs/webparts/brillientaCopilot/core';
 const { buildAgent, buildInstructions, validateAgentInput, MODULES, INSTRUCTIONS_LIMIT } = require(`${core}/compose.js`);
 const { HELPDESK_ACTIONS, TICKET_FILTER_FIELDS } = require(`${core}/apps/helpdesk.js`);
-const { ASSET_FILTER_FIELDS, REQUEST_FILTER_FIELDS } = require(`${core}/apps/assets.js`);
+const { ASSET_FILTER_FIELDS, REQUEST_FILTER_FIELDS, ASSET_ACTIONS } = require(`${core}/apps/assets.js`);
 const { PEOPLE_FILTER_FIELDS, PEOPLE_FIELDS } = require(`${core}/apps/directory.js`);
 const { buildPackageZip } = require(`${core}/package.js`);
 
@@ -23,7 +23,7 @@ const target = (key, over = {}) => {
     graphSiteId: SITE,
     prefix: m.defaultPrefix,
     listIds: Object.fromEntries(m.lists.map((l) => [l.key, `${key}-${l.key}-id`])),
-    options: key === 'helpdesk' ? { ticketPrefix: 'HD-', copilotEnabled: 'true' } : {},
+    options: key === 'helpdesk' ? { ticketPrefix: 'HD-', copilotEnabled: 'true' } : key === 'assets' ? { copilotEnabled: 'true', acknowledgementsEnabled: 'true' } : {},
     ...over
   };
 };
@@ -124,7 +124,7 @@ test('every write asks the user to confirm first', () => {
     const writes = [];
     for (const p of Object.values(spec.paths)) for (const [verb, op] of Object.entries(p)) if (verb !== 'get') writes.push(op.operationId);
     for (const w of writes) assert.ok(plugin.functions.find((f) => f.name === w).capabilities?.confirmation, `${w} has no confirmation`);
-    if (k !== 'helpdesk') assert.deepEqual(writes, [], `${k} must be read-only in phase 1`);
+    if (k === 'directory') assert.deepEqual(writes, [], 'the directory is read-only');
   }
 });
 
@@ -211,3 +211,50 @@ test('Employee Directory: filter columns are indexed and requested columns exist
   assertColumns(ED, 'employees', PEOPLE_FIELDS);
   for (const l of MODULES.directory.lists) assert.match(ED, new RegExp(`suffix: '${l.suffix}'`), l.suffix);
 });
+
+test('Assets: requests and receipt confirmations when the site supports them', () => {
+  const files = buildAgent(input(['assets']));
+  const plugin = JSON.parse(files['ai-plugin-assets.json']);
+  assert.deepEqual(plugin.functions.map((f) => f.name), ['searchAssets', 'getAsset', 'searchAssetRequests', 'listAssetTypes', 'queueAssetAction', 'getAssetActionResult', 'confirmReceipt']);
+  const spec = JSON.parse(files['openapi-assets.json']);
+  const queue = spec.paths['/sites/' + SITE + '/lists/assets-copilotActions-id/items'].post;
+  assert.deepEqual(queue.requestBody.content['application/json'].schema.properties.fields.properties.ActionName.enum, ['requestAsset', 'reportIssue', 'returnAsset', 'cancelRequest']);
+  const ack = spec.paths['/sites/' + SITE + '/lists/assets-acknowledgements-id/items'].post;
+  assert.deepEqual(ack.requestBody.content['application/json'].schema.properties.fields.required, ['Title', 'AssetId', 'AckResponse', 'AckStatus']);
+  const text = buildInstructions(input(['assets']));
+  assert.match(text, /queueAssetAction/);
+  assert.match(text, /Only for the signed-in person and their own assets and requests/);
+  assert.deepEqual(MODULES.assets.notes(input(['assets']).apps[0]), []);
+});
+
+test('Assets: read-only (and still valid) on older Asset Management or with Copilot requests off', () => {
+  const older = input(['assets']);
+  delete older.apps[0].listIds.copilotActions;
+  const off = input(['assets']);
+  off.apps[0].options.copilotEnabled = 'false';
+  for (const [i, note] of [[older, /update Asset Management/], [off, /turn on Settings > General > Features/]]) {
+    assert.deepEqual(validateAgentInput(i), [], 'optional lists and settings never block the download');
+    const plugin = JSON.parse(buildAgent(i)['ai-plugin-assets.json']);
+    assert.ok(!plugin.functions.some((f) => f.name === 'queueAssetAction'));
+    assert.ok(plugin.functions.some((f) => f.name === 'confirmReceipt'), 'receipt confirmation does not need the queue');
+    assert.doesNotMatch(buildInstructions(i), /queueAssetAction/);
+    assert.match(MODULES.assets.notes(i.apps[0]).join(' '), note);
+  }
+  const noAcks = input(['assets']);
+  noAcks.apps[0].options.acknowledgementsEnabled = 'false';
+  assert.ok(!JSON.parse(buildAgent(noAcks)['ai-plugin-assets.json']).functions.some((f) => f.name === 'confirmReceipt'));
+});
+
+if (AM) {
+  test('Asset Management: queued actions, the queue list and receipt fields match the app', () => {
+    const src = fs.readFileSync(path.join(REPOS, 'brillienta-assetmanagement/src/webparts/assetManagement/services/copilotActions.ts'), 'utf8');
+    const names = /COPILOT_ACTION_NAMES = \[([^\]]+)\]/.exec(src)[1].match(/'(\w+)'/g).map((x) => x.slice(1, -1));
+    assert.deepEqual(ASSET_ACTIONS.map((a) => a.name), names);
+    const queue = listBlock(AM, 'copilotActions');
+    assert.match(queue, /suffix: 'CopilotActions'/);
+    for (const n of names) assert.match(queue, new RegExp(`'${n}'`));
+    assertColumns(AM, 'copilotActions', ['ActionName', 'Payload', 'ActionStatus', 'ResultText', 'RequestId', 'ProcessedAt']);
+    assertColumns(AM, 'acknowledgements', ['AssetId', 'AckResponse', 'AckComment', 'AckStatus']);
+    assertColumns(AM, 'assetTypes', ['Details', 'Requestable', 'RequiresApproval', 'AllowLoans', 'IsActive']);
+  });
+}
