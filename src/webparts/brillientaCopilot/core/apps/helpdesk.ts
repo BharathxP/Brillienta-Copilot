@@ -41,7 +41,7 @@ const ticketPrefix = (t: IAppTarget): string => t.options.ticketPrefix || 'HD-';
 export const helpdeskModule: IAppModule = {
   key: 'helpdesk',
   label: 'Helpdesk',
-  defaultPrefix: 'HD_',
+  defaultPrefix: 'BrillHD_',
   namespace: 'helpdesk',
   lists: [
     { key: 'tickets', suffix: 'Tickets' },

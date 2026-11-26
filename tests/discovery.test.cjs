@@ -72,3 +72,9 @@ test('Asset Management is found without its newer lists, and its options are rea
   assert.deepEqual(D.assetOptions(JSON.stringify({ features: { acknowledgements: false } })), { copilotEnabled: 'false', acknowledgementsEnabled: 'false' });
   assert.deepEqual(D.assetOptions('{bad'), { copilotEnabled: 'false', acknowledgementsEnabled: 'true' });
 });
+
+test('finds the apps under the current Brillienta prefixes (BrillHD_, BrillAM_, BrillED_)', () => {
+  const HD_LISTS = ['Tickets', 'Comments', 'KBArticles', 'Categories', 'Statuses', 'Priorities', 'Agents', 'CopilotActions'];
+  const apps = D.findApps(site([...HD_LISTS.map((s) => `BrillHD_${s}`), 'BrillAM_Assets', 'BrillAM_Requests', 'BrillAM_AssetTypes', 'BrillAM_CopilotActions', 'BrillED_Employees', 'BrillED_Departments']));
+  assert.deepEqual(apps.map((a) => [a.key, a.prefix]), [['helpdesk', 'BrillHD_'], ['assets', 'BrillAM_'], ['directory', 'BrillED_']]);
+});

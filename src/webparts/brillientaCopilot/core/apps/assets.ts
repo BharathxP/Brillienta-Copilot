@@ -4,7 +4,7 @@
 // Writes (when the site supports them):
 //   - requests (new equipment, loans, report a fault, return, cancel) are queued in <prefix>CopilotActions and applied
 //     by Asset Management's own CopilotProcessor with the portal's rules, as the person who asked (Created By). Needs
-//     Asset Management with that list (schema 2) and Settings > General > Features > "Requests from Microsoft 365
+//     Asset Management with that list (schema 3) and Settings > General > Features > "Requests from Microsoft 365
 //     Copilot" on;
 //   - confirming receipt writes <prefix>Acknowledgements, which Asset Management already processes the same way.
 // Otherwise the module is read-only and the setup page says why.
@@ -59,7 +59,7 @@ const CONFIRM_FUNCTIONS: IFunctionSpec[] = [
 export const assetsModule: IAppModule = {
   key: 'assets',
   label: 'Asset Management',
-  defaultPrefix: 'AM_',
+  defaultPrefix: 'BrillAM_',
   namespace: 'assets',
   lists: [
     { key: 'assets', suffix: 'Assets' },

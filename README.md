@@ -11,8 +11,8 @@ the agent talks straight to the customer's SharePoint lists.
 
 | App | Read | Write | How writes are applied |
 | --- | --- | --- | --- |
-| Helpdesk | Tickets, conversation, knowledge base, categories, statuses, priorities, agents | Raise a ticket, reply, 17 ticket actions (resolve, reopen, assign, approve...) | Queued in `HD_CopilotActions` and applied by Helpdesk's own `CopilotProcessor` with its normal rules |
-| Asset Management | My equipment, who has a tag, equipment requests, asset types | Request or borrow equipment, report a fault, return, cancel a request, confirm receipt | Requests queued in `AM_CopilotActions` and applied by Asset Management's `CopilotProcessor` as the person who asked; receipts via `AM_Acknowledgements`. Needs Asset Management with Copilot requests (schema 2) and its feature switch on; read-only otherwise |
+| Helpdesk | Tickets, conversation, knowledge base, categories, statuses, priorities, agents | Raise a ticket, reply, 17 ticket actions (resolve, reopen, assign, approve...) | Queued in `BrillHD_CopilotActions` and applied by Helpdesk's own `CopilotProcessor` with its normal rules |
+| Asset Management | My equipment, who has a tag, equipment requests, asset types | Request or borrow equipment, report a fault, return, cancel a request, confirm receipt | Requests queued in `BrillAM_CopilotActions` and applied by Asset Management's `CopilotProcessor` as the person who asked; receipts via `BrillAM_Acknowledgements`. Needs Asset Management with Copilot requests (schema 3) and its feature switch on; read-only otherwise |
 | Employee Directory | People by department, office, country, manager, direct reports; departments | None | Read-only by design |
 
 Every write asks the person to confirm first. Directory reads request only directory-card fields (never mobile
@@ -68,7 +68,7 @@ See [docs/setup.md](docs/setup.md).
 
 ## Phase 2 (each a reviewed branch in the product repo)
 
-- [x] Asset Management: `AM_CopilotActions` queue + processor (request, return, report a fault, cancel) and receipt confirmation (branch `claude/copilot-actions` in Brillienta-AssetManagement).
+- [x] Asset Management: `BrillAM_CopilotActions` queue + processor (request, return, report a fault, cancel) and receipt confirmation (merged into Brillienta-AssetManagement main).
 - [ ] HRMS: index `EmployeeId` on Leave and Expenses, then leave balance, apply for leave and approvals via a queue.
 - [ ] TaskManager: index `AssigneeEmail`, then "my tasks", create and update tasks via a queue.
 - [ ] Fill in `core/publisher.ts` after Brillienta's one-time Entra + OAuth registration, so customers only consent.
